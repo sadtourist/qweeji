@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>qweeji board</title>
+<style>
+  @font-face { font-family: "Qweeji"; src: url("QweejiBoard-Regular.ttf") format("truetype"); }
+  :root { --ink:#532157; --pink:#FFD4D5; --cream:#FFF0E4; --ratio:1.486; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; min-height:100%; }
+  body { min-height:100dvh; color:var(--ink); background:var(--pink); font-family:"Qweeji",serif; text-transform:uppercase; overflow:hidden; }
+  body:before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.11; background-image:radial-gradient(var(--ink) .8px,transparent .8px); background-size:17px 17px; }
+  .shell { min-height:100dvh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; padding:clamp(18px,2.5vw,34px); gap:18px; width:100%; margin:0; }
+  header { position:relative; z-index:3; text-align:left; }
+  .brand { text-align:left; line-height:.82; font-size:clamp(42px,5vw,72px); letter-spacing:-.03em; transform:rotate(-.5deg); }
+  .brand small { display:block; font-size:clamp(14px,1.25vw,18px); letter-spacing:.12em; line-height:1.25; margin-top:12px; opacity:.8; }
+  main { min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(330px,390px); gap:clamp(26px,4vw,64px); align-items:center; }
+  #boardArea { min-height:0; height:100%; width:100%; display:grid; place-items:center; container-type:size; padding:6px 0; }
+  #crop { position:relative; overflow:hidden; cursor:pointer; width:min(100cqw,100cqh * var(--ratio)); aspect-ratio:var(--ratio); border:3px solid var(--ink); border-radius:2px; box-shadow:9px 10px 0 rgba(83,33,87,.14); transform:rotate(-.25deg); }
+  #stage { position:absolute; }
+  #stage img { display:block; width:100%; }
+  #stage #planchette { position:absolute; width:38%; transition:left .42s ease-in-out,top .42s ease-in-out; filter:drop-shadow(0 5px 6px rgba(83,33,87,.35)); pointer-events:none; }
+  .oracle { align-self:center; text-align:left; position:relative; z-index:2; display:flex; flex-direction:column; gap:24px; }
+  .method { margin:0 0 -10px; font-size:clamp(19px,1.5vw,23px); letter-spacing:.07em; }
+  nav { display:grid; gap:12px; width:100%; }
+  .tab { position:relative; font:inherit; text-transform:uppercase; text-align:left; color:var(--ink); background:var(--cream); border:2px solid var(--ink); outline:1px solid var(--ink); outline-offset:-6px; border-radius:2px; padding:18px 20px 17px; cursor:pointer; font-size:clamp(18px,1.65vw,25px); letter-spacing:.035em; box-shadow:5px 6px 0 var(--ink); transition:transform .12s,box-shadow .12s,background .12s; }
+  .tab:after { content:'✦'; position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:.75em; }
+  .tab:hover { transform:translate(-1px,-2px); box-shadow:7px 8px 0 var(--ink); }
+  .tab[aria-selected="true"] { background:var(--ink); color:var(--pink); outline-color:var(--pink); transform:translate(4px,5px); box-shadow:1px 1px 0 var(--ink); }
+  .reading { border-top:2px solid var(--ink); padding-top:22px; }
+  #prompt { margin:0 0 14px; font-size:clamp(17px,1.35vw,21px); letter-spacing:.07em; opacity:.82; }
+  #message { min-height:3.3em; font-size:clamp(31px,3.15vw,48px); letter-spacing:.015em; line-height:.98; white-space:pre-wrap; overflow-wrap:anywhere; }
+  #actions { min-height:3em; display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:18px; font-size:clamp(16px,1.2vw,19px); }
+  input,button { font:inherit; text-transform:uppercase; }
+  input { color:var(--ink); background:rgba(255,240,228,.55); border:2px solid var(--ink); border-radius:2px; padding:13px 14px; width:100%; letter-spacing:.035em; outline:none; font-size:18px; }
+  input::placeholder { color:var(--ink); opacity:.48; }
+  #actions button { color:var(--pink); background:var(--ink); border:2px solid var(--ink); border-radius:2px; padding:12px 15px; cursor:pointer; box-shadow:4px 4px 0 var(--cream); font-size:17px; }
+  #actions .linkbox { width:100%; display:grid; gap:10px; }
+  #actions .linkbox input { text-transform:none; font-family:Georgia,serif; font-size:13px; }
+  #actions .status { width:100%; font-size:16px; line-height:1.25; }
+  footer { display:flex; justify-content:space-between; align-items:center; gap:20px; font-size:clamp(14px,1vw,16px); letter-spacing:.06em; position:relative; z-index:3; text-align:left; }
+  footer a { color:var(--ink); text-decoration:none; } footer a:hover{text-decoration:underline;}
+  .hint { opacity:.68; }
+  @media(max-width:850px){ body{overflow:auto}.shell{min-height:100dvh;grid-template-rows:auto auto auto}.brand{font-size:50px} main{grid-template-columns:1fr;grid-template-rows:minmax(300px,52vh) auto;gap:22px}.oracle{gap:18px} nav{grid-template-columns:1fr 1fr}.tab{font-size:16px;padding:15px 13px}.tab:after{display:none}.reading{padding-top:18px}#message{min-height:2.4em;font-size:clamp(30px,8vw,45px)}footer{padding-top:8px}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">QWEEJI<small>AN UNRELIABLE COMMUNICATION DEVICE</small></div>
+  </header>
+  <main>
+    <div id="boardArea">
+      <div id="crop"><div id="stage">
+        <img src="board.png" alt="A qweeji board with a QWERTY keyboard layout">
+        <img id="planchette" src="planchette.png" alt="">
+      </div></div>
+    </div>
+    <section class="oracle" aria-live="polite">
+      <p class="method">choose your method.</p>
+      <nav aria-label="Qweeji modes">
+        <button class="tab" id="tabReceived">receive from the ether</button>
+        <button class="tab" id="tabSend">haunt a friend</button>
+      </nav>
+      <div class="reading">
+        <p id="prompt"></p>
+        <div id="message"></div>
+        <div id="actions"></div>
+      </div>
+    </section>
+  </main>
+  <footer><span></span><a href="https://linktr.ee/gmikiewicz" target="_blank" rel="noopener">made with love by gabriella</a></footer>
+</div>
+
+<script>
+  /* ================= THINGS YOU'LL WANT TO TWEAK ================= */
+
+  // All positions are in the coordinate space of the FULL board.png (2212 x 1659 units).
+  const REF = { w: 2212, h: 1659 };
+
+  // Which part of board.png to show (crops off the pink margin so the page pink is #FFD4D5)
+  const CROP = { x: 200, y: 220, w: 1810, h: 1218 };
+
+  // Where the hole in the planchette is, as a fraction of the planchette image (0-1)
+  const HOLE = { x: 0.40, y: 0.36 };
+
+  // Where the planchette rests before and after spelling
+  const REST = { x: 1030, y: 770 };
+
+  // Speed (milliseconds)
+  const MOVE_MS = 380;    // gliding to a letter (also set in the CSS transition above)
+  const PAUSE_MS = 180;   // pause on each letter
+
+  // Where each letter lives on the board. These are my best guesses:
+  // open the page with ?calibrate on the end, click each letter, and paste the numbers here.
+  const SPOTS = {
+    Q:{x:580,y:480}, W:{x:720,y:440}, E:{x:870,y:440}, R:{x:990,y:460}, T:{x:1110,y:470},
+    Y:{x:1210,y:500}, U:{x:1330,y:510}, I:{x:1430,y:505}, O:{x:1520,y:490}, P:{x:1620,y:480},
+    A:{x:650,y:620}, S:{x:760,y:620}, D:{x:860,y:610}, F:{x:970,y:600}, G:{x:1090,y:640},
+    H:{x:1220,y:690}, J:{x:1310,y:700}, K:{x:1440,y:690}, L:{x:1550,y:700},
+    Z:{x:620,y:830}, X:{x:740,y:830}, C:{x:855,y:820}, V:{x:980,y:830}, B:{x:1090,y:850},
+    N:{x:1210,y:860}, M:{x:1370,y:870},
+    ",":{x:1500,y:930}, ".":{x:1550,y:935}, "!":{x:1590,y:850}, "?":{x:1640,y:850},
+    1:{x:535,y:1065}, 2:{x:597,y:1065}, 3:{x:667,y:1065}, 4:{x:738,y:1065}, 5:{x:808,y:1065},
+    6:{x:535,y:1155}, 7:{x:605,y:1155}, 8:{x:675,y:1155}, 9:{x:745,y:1155}, 0:{x:820,y:1155}
+  };
+
+  /* ================= SETUP ================= */
+
+  const $ = id => document.getElementById(id);
+  const crop = $("crop"), stage = $("stage"), planchette = $("planchette");
+  const message = $("message"), actions = $("actions"), promptEl = $("prompt");
+  const tabReceived = $("tabReceived"), tabSend = $("tabSend");
+  const selectTab = which => {
+    tabReceived.setAttribute("aria-selected", which === "received");
+    tabSend.setAttribute("aria-selected", which === "send");
+  };
+
+  // crop the board image to just the board
+  document.documentElement.style.setProperty("--ratio", CROP.w / CROP.h);
+  stage.style.width  = (REF.w / CROP.w * 100) + "%";
+  stage.style.height = (REF.h / CROP.h * 100) + "%";
+  stage.style.left   = (-CROP.x / CROP.w * 100) + "%";
+  stage.style.top    = (-CROP.y / CROP.h * 100) + "%";
+
+  // move the planchette so its HOLE sits over a spot
+  function moveTo(p) {
+    planchette.style.left = (p.x / REF.w * 100) + "%";
+    planchette.style.top  = (p.y / REF.h * 100) + "%";
+    planchette.style.transform = `translate(${-HOLE.x * 100}%, ${-HOLE.y * 100}%)`;
+  }
+  planchette.style.transition = "none";
+  moveTo(REST);
+  requestAnimationFrame(() => requestAnimationFrame(() => planchette.style.transition = ""));
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ================= MESSAGES IN THE LINK ================= */
+
+  const clean = t => t.toUpperCase().replace(/[^A-Z0-9 ,.!?]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const encode = t => btoa(t).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const decode = h => { try { return clean(atob(h.replace(/-/g, "+").replace(/_/g, "/"))); } catch { return ""; } };
+
+  /* ================= THE SPELLING ================= */
+
+  let runId = 0;
+  async function play(text, onDone) {
+    const me = ++runId;
+    message.textContent = "";
+    actions.textContent = "";
+    moveTo(REST);
+    await sleep(1400);
+    for (const ch of text) {
+      if (me !== runId) return;
+      if (ch === " ") { message.textContent += " "; await sleep(PAUSE_MS); continue; }
+      const spot = SPOTS[ch];
+      if (!spot) continue;
+      moveTo(spot);
+      await sleep(MOVE_MS + 120);
+      message.textContent += ch;
+      await sleep(PAUSE_MS);
+    }
+    await sleep(500);
+    moveTo(REST);
+    if (me === runId && onDone) onDone();
+  }
+
+  /* ================= SCREENS ================= */
+
+  // messages "from beyond" (only A-Z, 0-9 and , . ! ? get spelled). Add your own!
+  const BEYOND = [
+    "A NAKED MAN FEARS NO PICKPOCKET.", "LIVE, LOVE, TOASTER BATH.", "TO CATCH A BUS, YOU GOTTA THINK LIKE A BUS.",
+    "IGNORE, ISOLATE, IBUPROFEN.", "ALL MEN ARE CREMATED EQUAL.", "DEADASS.", "THE SPIRIT IS WILLING BUT THE FLESH IS WEAK.",
+    "WHERE WERE YOU ON JANUARY 6TH?", "I TRUSTED THE PROCESS AND IT FAILED ME.", "THERE'S A STRANGE ENERGY ABOUT.", 
+    "YOU WOULD MAKE A WORTHY OPPONENT ON THE BATTLEFIELD.", "EVERY DAY IS ALL THERE IS.", "SUPPORT WOMEN'S RIGHTS AND WOMEN'S WRONGS.",
+    "WHAT ABOUT IN THE LITTLE SCHEME OF THINGS?", "HEARD ANY GOOD RUMORS RECENTLY?", "I NEED TO TELL YOU SOMETHI—-",
+    "IT'S REALLY IMPORTANT THAT YOU NEVER STEP INTO TH—-" 
+  ];
+  const fromLink = decode(location.hash.slice(1));   // a message someone sent you
+  let lastPick = -1;
+  function pickRandom() {
+    let n; do { n = Math.floor(Math.random() * BEYOND.length); } while (n === lastPick);
+    lastPick = n;
+    return BEYOND[n];
+  }
+
+  function showReceived() {
+    selectTab("received");
+    if (fromLink) { promptEl.textContent = "someone has been messing with the ether."; play(fromLink); }
+    else { promptEl.textContent = "the ether has spoken."; play(pickRandom()); }
+  }
+
+  function showCompose() {
+    runId++;
+    selectTab("send");
+    promptEl.textContent = "put words in the ether.";
+    message.textContent = "";
+    moveTo(REST);
+    actions.textContent = "";
+    const input = document.createElement("input");
+    input.placeholder = "say something weird";
+    input.maxLength = 80;
+    const btn = document.createElement("button");
+    btn.textContent = "make it haunted";
+    const send = async () => {
+      const text = clean(input.value);
+      if (!text) return;
+      const url = location.origin + location.pathname + "#" + encode(text);
+      let copied = false;
+      try { await navigator.clipboard.writeText(url); copied = true; } catch {}
+      play(text, () => {
+        actions.textContent = "";
+        const box = document.createElement("div");
+        box.className = "linkbox";
+        const note = document.createElement("div");
+        note.className = "status";
+        note.textContent = copied ? "LINK COPIED. SEND IT TO YOUR VICTIM." : "SEND THIS LINK TO YOUR VICTIM.";
+        const link = document.createElement("input");
+        link.value = url; link.readOnly = true;
+        link.onclick = () => link.select();
+        const copy = document.createElement("button");
+        copy.textContent = "COPY LINK";
+        copy.onclick = async () => { try { await navigator.clipboard.writeText(url); copy.textContent = "COPIED"; } catch { link.select(); } };
+        const again = document.createElement("button");
+        again.textContent = "WRITE ANOTHER MESSAGE";
+        again.onclick = showCompose;
+        box.append(note, link, copy, again);
+        actions.append(box);
+      });
+    };
+    btn.onclick = send;
+    input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+    actions.append(input, btn);
+    input.focus({ preventScroll: true });
+  }
+
+  /* ================= START ================= */
+
+  if (location.search.includes("calibrate")) {
+    // click anywhere on the board: planchette goes there and the numbers show up below
+    message.textContent = "click a letter";
+    crop.addEventListener("click", e => {
+      const r = stage.getBoundingClientRect();
+      const x = Math.round((e.clientX - r.left) / r.width * REF.w);
+      const y = Math.round((e.clientY - r.top) / r.height * REF.h);
+      moveTo({ x, y });
+      message.textContent = `{x:${x}, y:${y}}`;
+      console.log(`{x:${x}, y:${y}}`);
+    });
+  } else {
+    tabReceived.onclick = showReceived;
+    tabSend.onclick = showCompose;
+    if (fromLink) showReceived();   // opened a link? start spelling right away
+  }
+</script>
+</body>
+</html>
